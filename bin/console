@@ -1,0 +1,96 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "imap_clear"
+
+# You can add fixtures and/or initialization code here to make experimenting
+# with your gem easier. You can also use a different console, if you like.
+
+def get_app the_host, the_user, the_pass
+  app = ImapClear::App.new
+  app.host = the_host
+  app.port = 993
+  app.user = the_user
+  app.pass = the_pass
+
+  app
+end
+
+def connect_to_server
+  raise ArgumentError, "IMAPCLEAN_SERVER env var not set" if ENV["IMAPCLEAN_SERVER"].nil?
+  raise ArgumentError, "IMAPCLEAN_USER env var not set" if ENV["IMAPCLEAN_USER"].nil?
+  raise ArgumentError, "IMAPCLEAN_PASS env var not set" if ENV["IMAPCLEAN_PASS"].nil?
+
+  app = get_app(ENV["IMAPCLEAN_SERVER"], ENV["IMAPCLEAN_USER"], ENV["IMAPCLEAN_PASS"])
+
+  app.connect
+  app.login
+
+  app
+end
+
+def print text
+  $stdout.print text; $stdout.flush
+end
+
+def uids_from_daemon app
+  app.get_uids_where_from(ENV["IMAPCLEAN_DAEMON_EMAIL"])
+end
+
+def uids_of_bodies_with_invalid_email app
+  app.get_uids_where_body_contains "#{ENV["IMAPCLEAN_USER"]}@"
+end
+
+def emails_to_clean_count
+  app = connect_to_server
+
+  print "#{uids_from_daemon(app).count} emails to clean\n"
+
+  app.disconnect
+end
+
+def invalid_emails_to_clean_count
+  app = connect_to_server
+
+  print "#{uids_of_bodies_with_invalid_email(app).count} emails to clean\n"
+
+  app.disconnect
+end
+
+def clean_server
+  app = connect_to_server
+  uids = uids_from_daemon(app)
+  start_count = uids.count
+
+  print "\nCleaning emails from #{daemon_email}.\n"
+  app.delete_uids uids
+
+  app.expunge
+
+  new_uids = uids_from_daemon(app)
+  final_count = uids.count
+
+  print "\nDeleted #{start_count - final_count} of #{start_count} emails."
+
+  uids = uids_of_bodies_with_invalid_email(app)
+  start_count = uids.count
+
+  print "\nCleaning emails containing #{ENV["IMAPCLEAN_USER"]}@nnn.nnn.nnn.nnn.\n"
+  app.delete_uids uids
+
+  app.expunge
+
+  new_uids = uids_of_bodies_with_invalid_email(app)
+  final_count = uids.count
+
+  print "\nDeleted #{start_count - final_count} of #{start_count} emails."
+  app.disconnect
+end
+
+# (If you use this, don't forget to add pry to your Gemfile!)
+require "pry"
+Pry.start
+
+#require "irb"
+#IRB.start
+

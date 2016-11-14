@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+#set -vx
+
+bundle install
+
+OUTFILE=.envsetup         # Name of the env value file
+
+write_envsetup() {
+
+# Write an example .envsetup file
+
+
+# -----------------------------------------------------------
+(
+cat <<'EOF'
+#!/bin/bash
+# vi: ft=shell
+
+export IMAPCLEAN_SERVER=mail.example.com
+export IMAPCLEAN_USER=john.doe@example.com
+export IMAPCLEAN_PASS=ENTER_SECRET_HERE
+
+export IMAPCLEAN_DAEMON_EMAIL=MAILER-DAEMON@envious.nexcess.net
+
+# Uncomment these and modify if needed (defaults are shown)
+#export IMAPCLEAN_INBOX=INBOX
+#export IMAPCLEAN_TRASHBOX=INBOX.Trash
+
+# Use this file by sourcing it before running app:
+# ex:
+#     source .envsetup && ./exe/imap_clean
+#
+# or:
+#     . .envsetup && ./exe/imap_clean
+#
+EOF
+) > $OUTFILE
+
+echo
+echo
+echo "$OUTFILE has been generated."
+echo "Edit $OUTFILE and replace the SERVER, USER and PASS values with credentials from your mail server."
+echo
+echo "Use $OUTFILE as:"
+echo
+echo "source $OUTFILE && ./exe/imap_clean"
+echo
+}
+
+# Create an .envsetup file if it doesn't exist.
+if [ ! -f $OUTFILE ]; then
+  write_envsetup
+fi
+
+echo
+echo
+echo
+echo "ImapClean setup complete. Confirm there are no errors."
+echo

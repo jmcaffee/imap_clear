@@ -3,8 +3,42 @@
 require "bundler/setup"
 require "imap_clear"
 
-# You can add fixtures and/or initialization code here to make experimenting
-# with your gem easier. You can also use a different console, if you like.
+$host = nil
+$user = nil
+$pass = nil
+
+def process_cmd_line_args
+  arg_errors = false
+  errs = []
+
+  $host = ARGV.shift
+  $user = ARGV.shift
+  $pass = ARGV.shift
+
+  if $host.nil?
+    arg_errors = true
+    errs << "Missing server host address (mail.example.com)"
+  end
+
+  if $user.nil?
+    arg_errors = true
+    errs << "Missing user name (user@example.com)"
+  end
+
+  if $pass.nil?
+    arg_errors = true
+    errs << "Missing user password"
+  end
+
+  if ARGV.count > 0
+    arg_errors = true
+    errs << "Unexpected arguments: #{ARGV.join("|")}"
+  end
+
+  if arg_errors
+    raise ArgumentError, "\n" + errs.join("\n")
+  end
+end
 
 def get_app the_host, the_user, the_pass
   app = ImapClear::App.new
@@ -17,11 +51,7 @@ def get_app the_host, the_user, the_pass
 end
 
 def connect_to_server
-  raise ArgumentError, "IMAPCLEAN_SERVER env var not set" if ENV["IMAPCLEAN_SERVER"].nil?
-  raise ArgumentError, "IMAPCLEAN_USER env var not set" if ENV["IMAPCLEAN_USER"].nil?
-  raise ArgumentError, "IMAPCLEAN_PASS env var not set" if ENV["IMAPCLEAN_PASS"].nil?
-
-  app = get_app(ENV["IMAPCLEAN_SERVER"], ENV["IMAPCLEAN_USER"], ENV["IMAPCLEAN_PASS"])
+  app = get_app($host, $user, $pass)
 
   app.connect
   app.login
@@ -37,12 +67,16 @@ def daemon_email
   ENV["IMAPCLEAN_DAEMON_EMAIL"]
 end
 
+def username
+  $user
+end
+
 def uids_from_daemon app
   app.get_uids_where_from(daemon_email)
 end
 
 def uids_of_bodies_with_invalid_email app
-  app.get_uids_where_body_contains "#{ENV["IMAPCLEAN_USER"]}@"
+  app.get_uids_where_body_contains "#{username}@"
 end
 
 def emails_to_clean_count
@@ -77,10 +111,9 @@ def clean_emails_from_daemon
 
   app.expunge
 
-  uids = uids_from_daemon(app)
-  final_count = uids.count
+  final_count = uids_from_daemon(app).count
 
-  print "\nDeleted #{start_count - final_count} of #{start_count} emails."
+  print "\nDeleted #{start_count - final_count} of #{start_count} emails.\n"
   app.disconnect
 end
 
@@ -89,22 +122,17 @@ def clean_emails_to_user
   uids = uids_of_bodies_with_invalid_email(app)
   start_count = uids.count
 
-  print "\nCleaning emails containing #{ENV["IMAPCLEAN_USER"]}@nnn.nnn.nnn.nnn.\n"
+  print "\nCleaning emails containing #{username}@nnn.nnn.nnn.nnn.\n"
   app.delete_uids uids
 
   app.expunge
 
-  uids = uids_of_bodies_with_invalid_email(app)
-  final_count = uids.count
+  final_count = uids_of_bodies_with_invalid_email(app).count
 
-  print "\nDeleted #{start_count - final_count} of #{start_count} emails."
+  print "\nDeleted #{start_count - final_count} of #{start_count} emails.\n"
   app.disconnect
 end
 
-# (If you use this, don't forget to add pry to your Gemfile!)
-require "pry"
-Pry.start
 
-#require "irb"
-#IRB.start
-
+process_cmd_line_args
+clean_server

@@ -65,6 +65,10 @@ module ImapClear
       imap.fetch(seqno, "BODY[HEADER.FIELDS (SUBJECT)]")
     end
 
+    def uid_subject_line uid
+      imap.uid_fetch(uid, "BODY[HEADER.FIELDS (SUBJECT)]")
+    end
+
     def delete_uids uids
       $stdout.print "Deleting #{uids.count} emails\n"
       $stdout.flush

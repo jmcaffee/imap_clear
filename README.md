@@ -1,8 +1,7 @@
 # ImapClear
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/imap_clear`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+`imap_clear` is a command line application to delete emails on an IMAP server.
+It is designed to be called from a cron job on a periodic basis.
 
 ## Installation
 
@@ -22,7 +21,14 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+From the command line:
+
+    imap_clear server-host username password
+
+Example:
+
+    imap_clear mail.example.com user@example.com userpassword
+
 
 ## Development
 
@@ -32,7 +38,15 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/imap_clear.
+Bug reports and pull requests are welcome on GitHub at https://github.com/jmcaffee/imap_clear.
+
+1. Fork it ( https://github.com/jmcaffee/imap_clear/fork )
+1. Clone it (`git clone git@github.com:[my-github-user-name]/imap_clear.git`)
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Create tests for your feature branch
+4. Commit your changes (`git commit -am 'Add some feature'`)
+5. Push to the branch (`git push origin my-new-feature`)
+6. Create a new Pull Request
 
 
 ## License
